@@ -1,0 +1,284 @@
+# Snake Style Box Game
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake Style Game</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #111827, #1f2937);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        #gameArea {
+            width: 900px;
+            height: 550px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        #player {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #34d399, #10b981);
+            border-radius: 12px;
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            box-shadow: 0 0 20px rgba(16,185,129,0.7);
+            transition: 0.03s linear;
+        }
+
+        .food {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f472b6, #ec4899);
+            box-shadow: 0 0 15px rgba(236,72,153,0.8);
+        }
+
+        #scoreBoard {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            padding: 10px 25px;
+            border-radius: 15px;
+            font-size: 20px;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #title {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: bold;
+            color: #f9fafb;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            border: 2px solid #ef4444;
+            box-shadow: 0 0 30px rgba(239,68,68,0.6);
+        }
+
+        #gameOver h1 {
+            color: #ef4444;
+            margin-bottom: 10px;
+            font-size: 42px;
+        }
+
+        #gameOver p {
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        #restartBtn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: #10b981;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+
+        #restartBtn:hover {
+            transform: scale(1.05);
+            background: #059669;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="gameArea">
+
+        <div id="title">Snake Style Box Game</div>
+
+        <div id="player"></div>
+
+        <div id="scoreBoard">
+            Time Score: <span id="score">0</span>
+        </div>
+
+        <div id="gameOver">
+            <h1>GAME OVER</h1>
+            <p>Your Score: <span id="finalScore"></span></p>
+            <button id="restartBtn">Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+
+        const player = document.getElementById("player");
+        const gameArea = document.getElementById("gameArea");
+        const scoreText = document.getElementById("score");
+        const gameOverBox = document.getElementById("gameOver");
+        const finalScore = document.getElementById("finalScore");
+        const restartBtn = document.getElementById("restartBtn");
+
+        let playerX = 100;
+        let playerY = 100;
+        let score = 0;
+        let gameRunning = true;
+
+        const speed = 15;
+
+        document.addEventListener("keydown", (e) => {
+
+            if (!gameRunning) return;
+
+            switch (e.key) {
+                case "ArrowRight":
+                    playerX += speed;
+                    break;
+
+                case "ArrowLeft":
+                    playerX -= speed;
+                    break;
+
+                case "ArrowUp":
+                    playerY -= speed;
+                    break;
+
+                case "ArrowDown":
+                    playerY += speed;
+                    break;
+            }
+
+            playerX = Math.max(0, Math.min(855, playerX));
+            playerY = Math.max(0, Math.min(505, playerY));
+
+            player.style.left = playerX + "px";
+            player.style.top = playerY + "px";
+        });
+
+
+        // TIMER SCORE
+        const timer = setInterval(() => {
+            if (gameRunning) {
+                score++;
+                scoreText.innerText = score;
+            }
+        }, 1000);
+
+
+        // CREATE FOOD
+        function createFood() {
+
+            if (!gameRunning) return;
+
+            const food = document.createElement("div");
+            food.classList.add("food");
+
+            let size = 70;
+
+            const x = Math.random() * 820;
+            const y = Math.random() * 470;
+
+            food.style.width = size + "px";
+            food.style.height = size + "px";
+            food.style.left = x + "px";
+            food.style.top = y + "px";
+
+            gameArea.appendChild(food);
+
+            const shrink = setInterval(() => {
+
+                if (!gameRunning) {
+                    clearInterval(shrink);
+                    return;
+                }
+
+                size -= 2;
+
+                food.style.width = size + "px";
+                food.style.height = size + "px";
+
+                // collision
+                const playerRect = player.getBoundingClientRect();
+                const foodRect = food.getBoundingClientRect();
+
+                if (
+                    playerRect.left < foodRect.right &&
+                    playerRect.right > foodRect.left &&
+                    playerRect.top < foodRect.bottom &&
+                    playerRect.bottom > foodRect.top
+                ) {
+                    clearInterval(shrink);
+                    food.remove();
+
+                    // increase player size slowly
+                    const currentWidth = player.offsetWidth;
+                    const currentHeight = player.offsetHeight;
+
+                    player.style.width = currentWidth + 5 + "px";
+                    player.style.height = currentHeight + 5 + "px";
+
+                    createFood();
+                }
+
+                if (size <= 0) {
+                    clearInterval(shrink);
+                    food.remove();
+                    endGame();
+                }
+
+            }, 120);
+        }
+
+
+        function endGame() {
+
+            gameRunning = false;
+            finalScore.innerText = score;
+            gameOverBox.style.display = "block";
+        }
+
+
+        restartBtn.addEventListener("click", () => {
+            location.reload();
+        });
+
+
+        createFood();
+
+    </script>
+
+</body>
+</html>
+```
